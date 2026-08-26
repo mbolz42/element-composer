@@ -508,6 +508,16 @@
                 ghUpdateBtn();
                 showTip('GitHub disconnected');
             } else {
+                // Manual token paste works in browsers that cannot do the Device Flow (CORS of github.com/login blocked).
+                if (window.prompt) {
+                    const t = window.prompt('GitHub login: paste a personal token (e.g. output of `gh auth token`) — or press Cancel to try Device Flow:');
+                    if (t && t.trim()) {
+                        localStorage.setItem(GH.tokenKey, t.trim());
+                        ghUpdateBtn();
+                        showTip('GitHub connected ✓');
+                        return true;
+                    }
+                }
                 await ghDeviceLogin();
             }
         }
