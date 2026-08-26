@@ -454,7 +454,8 @@
                 });
                 dc = await ghParse(dcRes);
             } catch (e) {
-                showTip('GitHub login: ' + (e && e.message ? e.message : 'network error'), true);
+                const msg = (e && e.message ? e.message : 'network error');
+                showTip('GitHub login: ' + msg + ' — if you are inside a reader-embedded browser (Zed), open the page in Chrome/Safari/Firefox once and login there.', true);
                 return false;
             }
             if (!dc.device_code) { showTip('GitHub login failed.', true); return false; }
