@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WORLDSKATE Solo Dance 2026 - Element Composer</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        :root {
+            --excel-dark: #2F5597;
+            --ok-green: #1E8449;
+            --ok-bg: #E6F4EA;
+            --warning-red: #C0392B;
+            --warning-bg: #FDEDEC;
+            --border: #D5DBDB;
+            --grey-bg: #EEEEEE;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #ECF0F1;
+            padding: 8px;
+            color: #2C3E50;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--excel-dark), #4472C4);
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-radius: 12px 12px 0 0;
+        }
+
+        .header h1 { font-size: 17px; font-weight: 600; }
+        .header .subtitle { font-size: 11px; opacity: 0.9; margin-top: 2px; }
+
+        .header-actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+        .btn {
+            padding: 7px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .btn-secondary { background: rgba(255,255,255,0.15); color: white; white-space: nowrap; }
+        .btn-secondary:hover { background: rgba(255,255,255,0.25); }
+
+        .btn-add {
+            background: var(--excel-dark);
+            color: white;
+            width: 100%;
+            padding: 9px;
+            font-size: 14px;
+            border-radius: 0 0 12px 12px;
+        }
+        .btn-add:hover { background: #243E6E; }
+
+        .btn-remove {
+            background: transparent;
+            color: #C0392B;
+            border: 1px solid #C0392B;
+            border-radius: 4px;
+            padding: 2px 8px;
+            font-size: 12px;
+            cursor: pointer;
+        }
+        .btn-remove:hover { background: #C0392B; color: white; }
+
+        .btn-copy-one {
+            background: transparent;
+            color: var(--excel-dark);
+            border: 1px solid var(--excel-dark);
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 13px;
+            line-height: 1.2;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .btn-copy-one:hover { background: var(--excel-dark); color: white; }
+
+        .skater {
+            background: white;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 2px;
+        }
+        .skater.dragging { opacity: 0.45; }
+
+        .skater-header {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            background: #E8F0FE;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+        }
+
+        .drag-handle {
+            cursor: grab;
+            color: #7F8C8D;
+            padding: 0 2px;
+            font-size: 14px;
+            user-select: none;
+        }
+        .drag-handle:hover { color: var(--excel-dark); }
+
+        .collapse-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: var(--excel-dark);
+            padding: 0 4px;
+            width: 22px;
+        }
+
+        .skater-header input[type="text"] {
+            padding: 4px 7px;
+            border: 1px solid #CCC;
+            border-radius: 4px;
+            font-size: 13px;
+            font-weight: 600;
+            width: 110px;
+        }
+
+        .level-line {
+            font-size: 12px;
+            font-weight: 400;
+            color: #2C3E50;
+            background: white;
+            border: 1px solid #4472C4;
+            border-radius: 4px;
+            padding: 3px 8px;
+            flex: 1;
+            min-width: 220px;
+            white-space: nowrap;
+            overflow-x: auto;
+        }
+        .level-line b { font-weight: 700; color: var(--excel-dark); }
+        .level-line .sep { color: #999; margin: 0 6px; }
+        .level-line .warn-mark { color: #E74C3C; font-weight: 700; }
+
+        .btn-cloud-status {
+            font-weight: 700;
+            background: #28A745;
+        }
+
+        /* Compact set lines: dropdowns flow freely, no fixed grid */
+        .setlines { padding: 2px 0; }
+
+        .setline {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-bottom: 1px solid var(--border);
+        }
+        .setline:last-child { border-bottom: none; }
+
+        .row-odd { background: #FAFAFA; }
+        .row-even { background: white; }
+
+        .setline.warning { background: var(--warning-bg) !important; }
+
+        .setlabel {
+            font-weight: 700;
+            font-size: 12px;
+            color: var(--excel-dark);
+            min-width: 58px;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            border: 1px solid #CCC;
+            border-radius: 4px;
+            padding: 3px 6px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #999;
+            background: #F5F5F5;
+            user-select: none;
+        }
+        .badge.on {
+            background: var(--ok-bg);
+            color: var(--ok-green);
+            border-color: var(--ok-green);
+        }
+        .badge.used {
+            background: var(--warning-bg);
+            color: var(--warning-red);
+            border-color: #E74C3C;
+            text-decoration: line-through;
+        }
+
+        select {
+            padding: 4px 4px;
+            border: 1px solid #CCC;
+            border-radius: 3px;
+            font-size: 12px;
+            cursor: pointer;
+            max-width: 46vw;
+        }
+
+        select:disabled {
+            background: var(--grey-bg);
+            color: #999;
+            cursor: not-allowed;
+        }
+
+        select.greyed {
+            background: var(--grey-bg);
+            color: #999;
+        }
+
+        select.cell-warning {
+            background: var(--warning-bg) !important;
+            border-color: #E74C3C;
+        }
+
+        select.ok {
+            background: var(--ok-bg);
+            border-color: var(--ok-green);
+            color: var(--ok-green);
+            font-weight: 700;
+        }
+
+        .sel-footdir {
+            font-size: 16px;
+            font-weight: 700;
+            padding: 2px 2px;
+            line-height: 1.2;
+        }
+
+        .legend {
+            padding: 10px 16px;
+            display: flex;
+            gap: 14px;
+            flex-wrap: wrap;
+            background: white;
+            border-top: 1px solid var(--border);
+            font-size: 12px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .legend-box {
+            width: 20px;
+            height: 14px;
+            border-radius: 3px;
+            border: 1px solid #CCC;
+        }
+
+        .footer {
+            padding: 8px 16px;
+            background: #F8F9FA;
+            border-top: 1px solid var(--border);
+            font-size: 11px;
+            color: #7F8C8D;
+            border-radius: 0 0 12px 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>WORLDSKATE Solo Dance 2026</h1>
+                <div class="subtitle">Traveling Sequence - Coach Template</div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-secondary" onclick="ghCloudSave()" title="Commit all skaters to the GitHub cloud repo">Save to Cloud ☁</button>
+                <button class="btn btn-secondary" id="ghBtn" onclick="ghToggle()" title="GitHub login via Device Flow">GitHub ⎍</button>
+                <button class="btn btn-secondary" onclick="copyAsText()" title="Copy all entries as readable text (e.g. for WhatsApp)">Copy Text</button>
+                <button class="btn btn-secondary" onclick="saveToFile()" title="Save skaters to file (pick a location the first time)">Save to File</button>
+                <button class="btn btn-secondary" onclick="loadFromFile()" title="Load skaters from a previously saved file">Load from File</button>
+                <button class="btn btn-secondary" onclick="clearAll()">Clear All</button>
+            </div>
+        </div>
+
+        <div id="skaters"></div>
+
+        <button class="btn btn-add" onclick="addSkater()">+ Add Skater</button>
+
+        <div class="legend" style="margin-top:12px;border-radius:8px">
+            <div class="legend-item"><span>&#8630; = anticlockwise (preferred) &nbsp;&#8631; = clockwise</span></div>
+            <div class="legend-item"><span class="badge on">DF</span><span>= counts for level</span></div>
+            <div class="legend-item"><span class="badge used">DE</span><span>= performed, won&#8217;t count</span></div>
+            <div class="legend-item"><span>rotations: green &#8805;4 / red &lt;4 (caps level, TT needs 4)</span></div>
+            <div class="legend-item">
+                <div class="legend-box" style="background:var(--warning-bg)"></div>
+                <span>invalid / already used in SD (red)</span>
+            </div>
+        </div>
+
+        <div class="footer" style="margin-top:4px">
+            WORLD SKATE Solo Dance Rules 2026 - July 2025 Update
+        </div>
+    </div>
+
+    <script>
+        const ROWS = [
+            {program: 'SD', element: 'Tr', set: '1'},
+            {program: 'SD', element: 'Tr', set: '2'},
+            {program: 'SD', element: 'Tr', set: 'TT'},
+            {program: 'FD', element: 'Tr', set: '1'},
+            {program: 'FD', element: 'Tr', set: '2'},
+            {program: 'FD', element: 'Tr', set: 'TT'}
+        ];
+
+        const CONFIG = {
+            // Combined Foot + Direction; anticlockwise (↶) first (preferred)
+            footDirOptions: [
+                {value: '', text: '–'},
+                {value: 'Lccw', text: 'L ↶'},
+                {value: 'Rccw', text: 'R ↶'},
+                {value: 'Lcw', text: 'L ↷'},
+                {value: 'Rcw', text: 'R ↷'}
+            ],
+            fdSymbol: {Lccw: 'L↶', Rccw: 'R↶', Lcw: 'L↷', Rcw: 'R↷'},
+            deOptions: [
+                {value: '', text: 'DE –'},
+                {value: 'Jmp', text: 'Jump 1 rot.'},
+                {value: 'Cw', text: 'Choctaw'},
+                {value: 'SE', text: 'Spread Eagle'},
+                {value: 'IB', text: 'Ina Bauer'},
+                {value: 'CtRk', text: 'Ct/Rocker'},
+                {value: 'Stag', text: 'Stag'},
+                {value: 'Split', text: 'Split'}
+            ],
+            g2Options: [
+                {value: '', text: 'Arm –'},
+                {value: 'a', text: 'a - Elbow ≥ shoulder'},
+                {value: 'b', text: 'b - Arm motion'},
+                {value: 'c', text: 'c - Hands behind back'},
+                {value: 'd', text: 'd - Screw'},
+                {value: 'e', text: 'e - Clasped front'}
+            ],
+            g3Options: [
+                {value: '', text: 'Leg –'},
+                {value: 'a', text: 'a - Leg crossed'},
+                {value: 'b', text: 'b - Wheels held'},
+                {value: 'c', text: 'c - Leg lateral 45°'}
+            ],
+            g4Options: [
+                {value: '', text: 'Extra –'},
+                {value: 'a', text: 'TT - Third set'},
+                {value: 'b', text: 'WM - Free-leg motion'},
+                {value: 'c', text: 'CB - Core shifted 45°'},
+                {value: 'd', text: 'LSP - Leg static > hip'},
+                {value: 'e', text: 'WK - Knee wave'}
+            ],
+            // Short codes (for display)
+            g4Short: {a: 'TT', b: 'WM', c: 'CB', d: 'LSP', e: 'WK'},
+            // Bonus points of Grp 4 features per rules (used to pick the ONE counted extra)
+            // WK +2.0 > CB +1.7 > LSP +1.3 > TT +1.1 > WM +1.0
+            g4Bonus: {e: 2.0, c: 1.7, d: 1.3, a: 1.1, b: 1.0},
+            // Bonus shown in the summary, e.g. 4(CB(+1.7))
+            g4BonusLabel: {a: 'TT(+1.1)', b: 'WM(+1.0)', c: 'CB(+1.7)', d: 'LSP(+1.3)', e: 'WK(+2.0)'},
+            // Number of rotations per set: default 4 (needed for Level 4); range 2 .. 5.5 in steps of 0.5
+            rotOptions: [2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5].map(v => ({value: String(v), text: v + ' rot'})),
+            // Readable DE descriptions (for copyAsText)
+            deLong: {
+                Jmp: 'Jump with 1 rotation',
+                Cw: 'Choctaw',
+                SE: 'Spread Eagle',
+                IB: 'Ina Bauer',
+                CtRk: 'Choctaw or Rocker',
+                Stag: 'Stag',
+                Split: 'Split'
+            }
+        };
+
+        const STORAGE_KEY = 'element-composer-2026';
+        const SUGGESTED_FILENAME = 'element-composer-2026-skaters.json';
+        const GH = {
+            owner: 'mbolz42',
+            repo: 'element-composer',
+            branch: 'main',
+            clientId: '', // TODO: fill after registering the OAuth App (Step in README)
+            tokenKey: 'element-composer-2026-gh-token',
+            dir: 'data'
+        };
+
+        function ghToken() { return localStorage.getItem(GH.tokenKey) || null; }
+
+        function ghUpdateBtn() {
+            const b = document.getElementById('ghBtn');
+            if (!b) return;
+            const t = ghToken();
+            b.textContent = t ? 'GitHub ✓' : 'GitHub ⎍';
+            b.title = t ? 'GitHub connected — click to logout' : 'GitHub login via Device Flow';
+            b.classList.toggle('btn-cloud-status', !!t);
+        }
+
+        function ghSlug(skater) {
+            const name = (skater.name || '').trim();
+            if (!name) return 'unnamed-' + skater.id;
+            return name.toLowerCase()
+                .replace(/[^a-z0-9äöüß_\-\s]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss');
+        }
+
+        async function ghFetch(path, opts) {
+            opts = opts || {};
+            const t = ghToken();
+            opts.headers = Object.assign({Accept: 'application/vnd.github+json'}, opts.headers || {});
+            if (t) opts.headers.Authorization = 'token ' + t;
+            const res = await fetch('https://api.github.com' + path, opts);
+            return res;
+        }
+
+        function b64(str) {
+            return btoa(unescape(encodeURIComponent(str)));
+        }
+
+        async function ghDeviceLogin() {
+            if (!GH.clientId) {
+                showTip('GitHub Client ID not configured yet (see README).', true);
+                return false;
+            }
+            const dcRes = await fetch('https://github.com/login/device/code', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json', Accept: 'application/json'},
+                body: JSON.stringify({client_id: GH.clientId, scope: 'repo'})
+            });
+            const dc = await dcRes.json();
+            if (!dc.device_code) { showTip('GitHub login failed.', true); return false; }
+            showTip('Enter code ' + dc.user_code + ' on github.com/login/device …', false);
+            try { window.open(dc.verification_uri, '_blank'); } catch (e) { /* blocked by popup blocker */ }
+            const expireAt = Date.now() + dc.expires_in * 1000;
+            while (Date.now() < expireAt) {
+                await new Promise(r => setTimeout(r, (dc.interval || 5) * 1000));
+                const tk = await fetch('https://github.com/login/oauth/access_token', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json', Accept: 'application/json'},
+                    body: JSON.stringify({client_id: GH.clientId, device_code: dc.device_code, grant_type: 'urn:ietf:params:oauth:grant-type:device_code'})
+                }).then(r => r.json());
+                if (tk.access_token) {
+                    localStorage.setItem(GH.tokenKey, tk.access_token);
+                    ghUpdateBtn();
+                    showTip('GitHub connected ✓');
+                    return true;
+                }
+                if (tk.error === 'authorization_pending') continue;
+                if (tk.error === 'slow_down') continue;
+                // access_denied / expired_token / unsupported_grant_type -> stop
+                showTip('GitHub login aborted: ' + tk.error, true);
+                return false;
+            }
+            showTip('GitHub login timed out.', true);
+            return false;
+        }
+
+        async function ghToggle() {
+            if (ghToken()) {
+                localStorage.removeItem(GH.tokenKey);
+                ghUpdateBtn();
+                showTip('GitHub disconnected');
+            } else {
+                await ghDeviceLogin();
+            }
+        }
+
+        // Load all skaters from data/*.json in the repo (public -> works without token too)
+        async function ghCloudLoad() {
+            if (!GH.clientId) return null;
+            try {
+                const listRes = await ghFetch(`/repos/${GH.owner}/${GH.repo}/contents/${GH.dir}`);
+                if (!listRes.ok) return null; // 404: empty repo / wrong config -> fall back to local
+                const listing = await listRes.json();
+                const files = (Array.isArray(listing) ? listing : []).filter(f => String(f.name).endsWith('.json'));
+                if (!files.length) return null;
+                const acc = {skaters: [], nextId: 1};
+                for (const f of files) {
+                    const cRes = await ghFetch(`/repos/${GH.owner}/${GH.repo}/contents/${GH.dir}/${f.name}`);
+                    if (!cRes.ok) continue;
+                    const c = await cRes.json();
+                    try {
+                        const data = JSON.parse(decodeURIComponent(escape(atob(c.content.replace(/\n/g, '')))));
+                        if (Array.isArray(data.skaters)) {
+                            data.skaters.forEach(s => acc.skaters.push(s));
+                            acc.nextId = Math.max(acc.nextId, data.nextId || 1, ...data.skaters.map(s => s.id + 1));
+                        }
+                    } catch (e) { /* skip malformed file */ }
+                }
+                return acc.skaters.length ? acc : null;
+            } catch (e) {
+                return null; // offline etc.
+            }
+        }
+
+        // Commit one file per skater
+        async function ghCloudSave() {
+            if (!GH.clientId) {
+                showTip('GitHub Client ID not configured yet (see README).', true);
+                return;
+            }
+            if (!ghToken()) {
+                const really = confirm('Save to Cloud needs a GitHub login. Connect now?');
+                if (!really) return;
+                if (!(await ghDeviceLogin())) return;
+            }
+            const base = `/repos/${GH.owner}/${GH.repo}/contents/${GH.dir}/`;
+            const payload = JSON.stringify({skaters, nextId}, null, 2);
+            const bySlug = {};
+            let committed = 0, failed = 0;
+            for (const skater of skaters) {
+                let slug = ghSlug(skater);
+                if (bySlug[slug] && bySlug[slug] !== skater.id) slug = slug + '-' + skater.id;
+                bySlug[slug] = skater.id;
+                let sha = null;
+                try {
+                    const meta = await ghFetch(base + slug + '.json').then(r => r.ok ? r.json() : null);
+                    if (meta) sha = meta.sha;
+                } catch (e) { /* new file */ }
+                const name = (skater.name || '(unnamed)').trim();
+                const sd = levelString(skater, 'SD').call, fd = levelString(skater, 'FD').call;
+                const msg = `${name}: ${sd} / ${fd}`;
+                const body = {message: msg, content: b64(payload), branch: GH.branch};
+                if (sha) body.sha = sha;
+                try {
+                    const res = await ghFetch(base + slug + '.json', {method: 'PUT', body: JSON.stringify(body)});
+                    if (res.ok) committed++; else failed++;
+                } catch (e) { failed++; }
+            }
+            showTip(failed
+                ? `Cloud: ${committed}/${skaters.length} committed, ${failed} failed (check login/repo).`
+                : `Cloud ✓ committed ${committed} skater${committed === 1 ? '' : 's'}.`, failed > 0);
+        }
+
+        let skaters = [];   // {id, name, surname, collapsed, rows: [{foot,dir,de,g2,g3,g4} x6]}
+        let nextId = 1;
+        let fileHandle = null; // File System Access API handle (when available)
+        const skaterRefs = new Map(); // id -> {section, levelLine, rowRefs:[{...inputs}]}
+
+        function newSkaterState() {
+            return {
+                id: nextId++,
+                name: '',
+                surname: '',
+                collapsed: false,
+                rows: ROWS.map(r => ({foot: '', dir: '', rot: 4, de: '', g2: '', g3: '', g4: ''}))
+            };
+        }
+
+        // ---------- persistence ----------
+        function save() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({skaters, nextId, fileHandleInfo: null}));
+            // Fire-and-forget file save when a handle exists (permission granted silently)
+            if (fileHandle) saveToFileInternal().catch(() => {});
+        }
+
+        function saveLocal() {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify({skaters, nextId}));
+        }
+
+        async function saveToFileInternal() {
+            if (!fileHandle) return;
+            const writable = await fileHandle.createWritable();
+            await writable.write(JSON.stringify({skaters, nextId}, null, 2));
+            await writable.close();
+        }
+
+        async function loadFromFileInternal(handle) {
+            const f = await handle.getFile();
+            const data = JSON.parse(await f.text());
+            if (!data || !Array.isArray(data.skaters) || !data.skaters.length) return null;
+            return data;
+        }
+
+        // Public buttons
+        async function saveToFile() {
+            if (fileHandle) {
+                try { await saveToFileInternal(); showTip('Saved to ' + (fileHandle.name || 'file')); return; }
+                catch (e) { fileHandle = null; }
+            }
+            // Pick a new file (FS API) or download fallback
+            if (window.showSaveFilePicker) {
+                try {
+                    fileHandle = await window.showSaveFilePicker({
+                        suggestedName: SUGGESTED_FILENAME,
+                        types: [{description: 'JSON', accept: {'application/json': ['.json']}}]
+                    });
+                    await saveToFileInternal();
+                    showTip('Saved to ' + fileHandle.name);
+                } catch (e) { /* user cancelled */ }
+            } else {
+                // Fallback: download
+                const blob = new Blob([JSON.stringify({skaters, nextId}, null, 2)], {type: 'application/json'});
+                const a = document.createElement('a');
+                a.href = URL.createObjectURL(blob);
+                a.download = SUGGESTED_FILENAME;
+                a.click();
+                URL.revokeObjectURL(a.href);
+                showTip('Downloaded ' + SUGGESTED_FILENAME);
+            }
+        }
+
+        async function loadFromFile() {
+            if (window.showOpenFilePicker) {
+                try {
+                    const [h] = await window.showOpenFilePicker({
+                        types: [{description: 'JSON', accept: {'application/json': ['.json']}}],
+                        multiple: false
+                    });
+                    const data = await loadFromFileInternal(h);
+                    if (!data) { showTip('File contains no skaters.', true); return; }
+                    applyLoadedData(data);
+                    fileHandle = h;
+                    showTip('Loaded from ' + h.name);
+                } catch (e) { /* cancelled */ }
+            } else {
+                // Fallback: file input
+                const input = document.createElement('input');
+                input.type = 'file';
+                input.accept = '.json,application/json';
+                input.onchange = async () => {
+                    const f = input.files && input.files[0];
+                    if (!f) return;
+                    try {
+                        const data = JSON.parse(await f.text());
+                        if (!data || !data.skaters) { showTip('File contains no skaters.', true); return; }
+                        applyLoadedData(data);
+                    } catch (e) { showTip('Cannot read file.', true); }
+                };
+                input.click();
+            }
+        }
+
+        function applyLoadedData(data) {
+            skaters = data.skaters.map(s => ({collapsed: false, ...s}));
+            nextId = data.nextId || (Math.max(0, ...skaters.map(s => s.id)) + 1);
+            skaterRefs.clear();
+            document.getElementById('skaters').innerHTML = '';
+            skaters.forEach(skater => createSkaterSection(skater));
+            skaters.forEach(updateSkater);
+            save();
+        }
+
+        function showTip(msg, isError) {
+            const tip = document.createElement('div');
+            tip.textContent = msg;
+            tip.style.cssText = 'position:fixed;bottom:12px;left:50%;transform:translateX(-50%);' +
+                'background:' + (isError ? '#C0392B' : '#1E8449') + ';color:white;padding:6px 12px;' +
+                'border-radius:6px;font-size:12px;z-index:999;';
+            document.body.appendChild(tip);
+            setTimeout(() => tip.remove(), 2500);
+        }
+
+        function load() {
+            try {
+                const raw = localStorage.getItem(STORAGE_KEY);
+                if (!raw) return false;
+                const data = JSON.parse(raw);
+                if (!data.skaters || !data.skaters.length) return false;
+                skaters = data.skaters.map(s => ({collapsed: false, ...s}));
+                nextId = data.nextId || (Math.max(...skaters.map(s => s.id)) + 1);
+                return true;
+            } catch (e) { return false; }
+        }
+
+        // ---------- drag & drop reorder ----------
+        let dragSrcId = null;
+        function onDragStart(ev, id) { dragSrcId = id; ev.dataTransfer.effectAllowed = 'move'; }
+        function onDragOver(ev) { ev.preventDefault(); ev.dataTransfer.dropEffect = 'move'; }
+        function onDrop(ev, targetId) {
+            ev.preventDefault();
+            if (dragSrcId == null || dragSrcId === targetId) return;
+            const from = skaters.findIndex(s => s.id === dragSrcId);
+            const to = skaters.findIndex(s => s.id === targetId);
+            if (from < 0 || to < 0) return;
+            skaters.splice(to, 0, skaters.splice(from, 1)[0]);
+            rebuildAll();
+            save();
+            dragSrcId = null;
+        }
+
+        function rebuildAll() {
+            skaterRefs.clear();
+            document.getElementById('skaters').innerHTML = '';
+            skaters.forEach(skater => createSkaterSection(skater));
+            skaters.forEach(updateSkater);
+        }
+
+        function toggleCollapse(skater) {
+            skater.collapsed = !skater.collapsed;
+            const refs = skaterRefs.get(skater.id);
+            if (!refs) return;
+            refs.section.querySelector('.setlines').style.display = skater.collapsed ? 'none' : '';
+            refs.section.querySelector('.collapse-btn').textContent = skater.collapsed ? '\u25B8' : '\u25BE';
+            save();
+        }
+
+        // ---------- UI building ----------
+        function escapeHtml(s) {
+            return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+
+        function buildOptions(opts, selected) {
+            return opts.map(o => `<option value="${o.value}" ${o.value === selected ? 'selected' : ''}>${o.text}</option>`).join('');
+        }
+
+        // Measurement span for auto-width dropdowns
+        const measureSpan = document.createElement('span');
+        measureSpan.style.cssText = 'position:absolute;visibility:hidden;white-space:nowrap;font-size:12px;font-family:inherit;';
+        document.body.appendChild(measureSpan);
+
+        function fitSelect(sel) {
+            if (!sel || sel.style.display === 'none') return;
+            const opt = sel.options[sel.selectedIndex];
+            if (!opt) return;
+            // Measure with the select's own font (size/weight differ per class, e.g. .sel-footdir, .ok)
+            if (window.getComputedStyle) {
+                const cs = getComputedStyle(sel);
+                measureSpan.style.fontFamily = cs.fontFamily;
+                measureSpan.style.fontSize = cs.fontSize;
+                measureSpan.style.fontWeight = cs.fontWeight;
+                measureSpan.style.letterSpacing = cs.letterSpacing;
+            }
+            measureSpan.textContent = opt.text;
+            const w = measureSpan.offsetWidth || opt.text.length * 8; // fallback for jsdom-like environments
+            sel.style.width = Math.ceil(w + 34) + 'px'; // text + padding + dropdown arrow
+        }
+
+        function fitAllSelects(root) {
+            root.querySelectorAll('select').forEach(fitSelect);
+        }
+
+        function createSkaterSection(skater) {
+            const section = document.createElement('div');
+            section.className = 'skater';
+            section.dataset.id = skater.id;
+
+            // Header: drag handle, collapse toggle, name, surname, level line, remove
+            const header = document.createElement('div');
+            header.className = 'skater-header';
+            header.innerHTML = `
+                <span class="drag-handle" draggable="true" title="Drag to change order">☰</span>
+                <button class="collapse-btn" title="Toggle open/closed">${skater.collapsed ? '\u25B8' : '\u25BE'}</button>
+                <input type="text" placeholder="Name" value="${escapeHtml(skater.name)}" data-field="name">
+                <input type="text" placeholder="Surname" value="${escapeHtml(skater.surname)}" data-field="surname">
+                <div class="level-line"></div>
+                <button class="btn-copy-one" title="Copy this skater's entry as text">&#128203;</button>
+                <button class="btn-remove" title="Remove skater">&#10005;</button>
+            `;
+
+            const handle = header.querySelector('.drag-handle');
+            handle.addEventListener('dragstart', ev => onDragStart(ev, skater.id));
+            section.addEventListener('dragover', onDragOver);
+            section.addEventListener('drop', ev => onDrop(ev, skater.id));
+            section.addEventListener('dragend', () => { dragSrcId = null; });
+
+            header.querySelector('[data-field="name"]').addEventListener('input', e => { skater.name = e.target.value; save(); });
+            header.querySelector('[data-field="surname"]').addEventListener('input', e => { skater.surname = e.target.value; save(); });
+            header.querySelector('.collapse-btn').addEventListener('click', () => toggleCollapse(skater));
+            header.querySelector('.btn-copy-one').addEventListener('click', () => copySkaterText(skater));
+            header.querySelector('.btn-remove').addEventListener('click', () => {
+                const label = (skater.name + ' ' + skater.surname).trim() || 'this skater';
+                if (confirm('Remove ' + label + '?')) {
+                    skaters = skaters.filter(s => s.id !== skater.id);
+                    skaterRefs.delete(skater.id);
+                    section.remove();
+                    save();
+                }
+            });
+            section.appendChild(header);
+
+            const lines = document.createElement('div');
+            lines.className = 'setlines';
+            if (skater.collapsed) lines.style.display = 'none';
+            section.appendChild(lines);
+
+            const rowRefs = [];
+
+            ROWS.forEach((rdef, i) => {
+                const rstate = skater.rows[i];
+                const line = document.createElement('div');
+                line.className = 'setline ' + (i % 2 === 0 ? 'row-even' : 'row-odd');
+                const isSet_1_2 = rdef.set === '1' || rdef.set === '2';
+                const isTT = rdef.set === 'TT';
+
+                let html = `<span class="setlabel">${rdef.program} Tr ${rdef.set}</span>`;
+
+                // Foot + Direction (combined)
+                html += `<select class="sel-footdir" data-f="footDir" title="Foot & direction">${buildOptions(CONFIG.footDirOptions, footDirValue(rstate))}</select>`;
+
+                // Number of rotations in this set
+                html += `<select data-f="rot" title="Number of rotations in this set (Level 4 needs 4 per set)">${buildOptions(CONFIG.rotOptions, String(rotOf(rstate)))}</select>`;
+
+                // DF badge (automatic)
+                html += `<label class="badge" data-f="dfBadge" title="Different Feet">DF</label>`;
+
+                // DE badge + dropdown (Set 1 only)
+                if (rdef.set === '1') {
+                    html += `<label class="badge" data-f="deBadge" title="Different Entry">DE</label>`;
+                    html += `<select data-f="de" title="Difficult Entry">${buildOptions(CONFIG.deOptions, rstate.de)}</select>`;
+                }
+
+                // Grp 4 extras on Set 1/2 (TT on TT rows), placed BEFORE Grp 2/3 per user request
+                if (isTT) {
+                    html += `<label class="badge" data-f="ttBadge" title="Third traveling set: counts when Foot+Dir selected">TT</label>`;
+                } else {
+                    html += `<select data-f="g4" title="Grp 4 Extra">${buildOptions(CONFIG.g4Options, rstate.g4)}</select>`;
+                }
+
+                // Grp 2 (Arm) / Grp 3 (Leg)
+                html += `<select data-f="g2" title="Grp 2 Arm">${buildOptions(CONFIG.g2Options, rstate.g2)}</select>`;
+                html += `<select data-f="g3" title="Grp 3 Leg">${buildOptions(CONFIG.g3Options, rstate.g3)}</select>`;
+
+                line.innerHTML = html;
+                lines.appendChild(line);
+
+                const ref = {
+                    tr: line,
+                    def: rdef,
+                    state: rstate,
+                    footDir: line.querySelector('[data-f="footDir"]'),
+                    rotSel: line.querySelector('[data-f="rot"]'),
+                    dfBadge: line.querySelector('[data-f="dfBadge"]'),
+                    dfCheck: null,
+                    deBadge: line.querySelector('[data-f="deBadge"]'),
+                    deCheck: null,
+                    de: line.querySelector('[data-f="de"]'),
+                    g2: line.querySelector('[data-f="g2"]'),
+                    g3: line.querySelector('[data-f="g3"]'),
+                    g4: line.querySelector('[data-f="g4"]'),
+                    ttBadge: line.querySelector('[data-f="ttBadge"]'),
+                    dfCounts: false,
+                    dfPerformed: false,
+                    deCounts: false,
+                    dePerformed: false
+                };
+                rowRefs.push(ref);
+
+                ref.footDir.addEventListener('change', e => {
+                    const v = e.target.value;
+                    rstate.foot = v ? v[0] : '';
+                    rstate.dir = v ? v.slice(1) : '';
+                    onChange(skater);
+                    // Meaningful default: pre-fill the NEXT row with opposite foot+dir when it is empty
+                    if (v && (rdef.set === '1' || rdef.set === '2')) {
+                        const nextIdx = i + 1;
+                        if (nextIdx < ROWS.length && ROWS[nextIdx].program === rdef.program) {
+                            const nextState = skater.rows[nextIdx];
+                            if (!footDirValue(nextState)) {
+                                nextState.foot = v[0] === 'L' ? 'R' : 'L';
+                                nextState.dir = v.slice(1) === 'ccw' ? 'cw' : 'ccw';
+                                onChange(skater);
+                                const nextRef = skaterRefs.get(skater.id).rowRefs[nextIdx];
+                                if (nextRef) { nextRef.footDir.value = footDirValue(nextState); fitSelect(nextRef.footDir); }
+                            }
+                        }
+                    }
+                    fitSelect(e.target);
+                });
+                ref.rotSel.addEventListener('change', e => { rstate.rot = parseFloat(e.target.value); onChange(skater); fitSelect(e.target); });
+                if (ref.de) ref.de.addEventListener('change', e => { rstate.de = e.target.value; onChange(skater); fitSelect(e.target); });
+                ref.g2.addEventListener('change', e => { rstate.g2 = e.target.value; onChange(skater); fitSelect(e.target); });
+                ref.g3.addEventListener('change', e => { rstate.g3 = e.target.value; onChange(skater); fitSelect(e.target); });
+                if (ref.g4) ref.g4.addEventListener('change', e => { rstate.g4 = e.target.value; onChange(skater); fitSelect(e.target); });
+            });
+
+            document.getElementById('skaters').appendChild(section);
+            skaterRefs.set(skater.id, {
+                section,
+                levelLine: header.querySelector('.level-line'),
+                rowRefs
+            });
+        }
+
+        // ---------- helpers ----------
+        function rotOf(state) {
+            const v = parseFloat(state.rot);
+            return isNaN(v) ? 4 : v; // legacy saved data without rot -> default 4
+        }
+
+        function footDirValue(state) {
+            return (state.foot === 'L' || state.foot === 'R') && (state.dir === 'cw' || state.dir === 'ccw')
+                ? state.foot + state.dir : '';
+        }
+
+        function onChange(skater) {
+            updateSkater(skater);
+            save();
+        }
+
+        function hasDirChange(rows) {
+            const valid = d => d === 'cw' || d === 'ccw';
+            for (let i = 1; i < rows.length; i++) {
+                const prev = rows[i - 1].state.dir, cur = rows[i].state.dir;
+                if (valid(prev) && valid(cur) && prev !== cur) return true;
+            }
+            return false;
+        }
+
+        function footChangeFlags(rows) {
+            const valid = f => f === 'L' || f === 'R';
+            const flags = [];
+            let prev = null;
+            rows.forEach(r => {
+                const cur = r.state.foot;
+                flags.push(valid(prev) && valid(cur) && prev !== cur);
+                prev = cur;
+            });
+            return flags;
+        }
+
+        function setDisabledOptions(select, usedSet) {
+            Array.from(select.options).forEach(opt => {
+                if (opt.value === 'a' && select.dataset.f === 'g4') return; // TT option untouched (still selectable to be hidden)
+                opt.disabled = opt.value !== '' && usedSet.has(opt.value);
+            });
+        }
+
+        // ---------- update flow ----------
+        function updateSkater(skater) {
+            const refs = skaterRefs.get(skater.id);
+            if (!refs) return;
+            const rows = refs.rowRefs;
+
+            // Clear previous state
+            rows.forEach(r => {
+                r.tr.classList.remove('warning');
+                [r.g2, r.g3, r.g4].forEach(sel => {
+                    if (!sel) return;
+                    sel.classList.remove('greyed', 'cell-warning', 'ok');
+                    sel.style.display = '';
+                });
+                r.footDir.classList.remove('cell-warning', 'ok');
+                r.rotSel.classList.remove('cell-warning', 'ok');
+                if (r.dfBadge) r.dfBadge.classList.remove('on', 'used');
+                if (r.deBadge) r.deBadge.classList.remove('on', 'used');
+                if (r.ttBadge) r.ttBadge.classList.remove('on');
+            });
+
+            const sdRows = rows.filter(r => r.def.program === 'SD');
+            const fdRows = rows.filter(r => r.def.program === 'FD');
+
+            // --- TT auto: on TT rows, TT is selected when Foot+Dir is chosen (counts in FD if not used in SD) ---
+            [sdRows, fdRows].forEach(group => {
+                const tt = group.find(r => r.def.set === 'TT');
+                const on = !!footDirValue(tt.state);
+                tt.state.g4 = on ? 'a' : '';
+                if (on && tt.ttBadge) tt.ttBadge.classList.add('on');
+            });
+
+            // --- Features used in SD (for FD greying / one-candidate hiding) ---
+            const sdDE = sdRows.find(r => r.def.set === '1').state.de;
+            const sdG2 = new Set(sdRows.map(r => r.state.g2).filter(v => v));
+            const sdG3 = new Set(sdRows.map(r => r.state.g3).filter(v => v));
+            const sdG4 = new Set(sdRows.map(r => r.state.g4).filter(v => v && v !== 'a'));
+
+            // --- DF ---
+            const sdFlags = footChangeFlags(sdRows);
+            const sdDFUsed = sdFlags.some(Boolean);
+            const fdFlags = footChangeFlags(fdRows);
+
+            sdRows.forEach((r, i) => {
+                r.dfPerformed = sdFlags[i];
+                r.dfCounts = sdFlags[i];
+                if (sdFlags[i]) r.dfBadge.classList.add('on');
+            });
+            fdRows.forEach((r, i) => {
+                r.dfPerformed = fdFlags[i];
+                r.dfCounts = fdFlags[i] && !sdDFUsed;
+                if (r.dfCounts) r.dfBadge.classList.add('on');
+                else if (fdFlags[i]) r.dfBadge.classList.add('used');
+            });
+
+            // --- DE ---
+            [sdRows, fdRows].forEach(group => {
+                const set1 = group.find(r => r.def.set === '1');
+                if (!set1 || !set1.deBadge) return;
+                const hasDE = !!set1.state.de;
+                const reused = set1.def.program === 'FD' && hasDE && sdDE && set1.state.de === sdDE;
+                set1.dePerformed = hasDE;
+                set1.deCounts = hasDE && !reused;
+                if (set1.de) set1.de.classList.remove('cell-warning');
+                if (set1.deCounts) set1.deBadge.classList.add('on');
+                else if (reused) {
+                    set1.deBadge.classList.add('used');
+                    set1.tr.classList.add('warning');
+                    if (set1.de) set1.de.classList.add('cell-warning');
+                }
+                // FD: disable the SD-used entry in the dropdown
+                if (set1.def.program === 'FD' && set1.de && sdDE) {
+                    Array.from(set1.de.options).forEach(opt => {
+                        opt.disabled = opt.value !== '' && opt.value === sdDE;
+                    });
+                }
+            });
+
+            // --- Hide/show Grp4 / (Grp2,3) mutual exclusion, and TT special handling ---
+            rows.forEach(r => {
+                const isTT = r.def.set === 'TT';
+                const extra = (r.state.g4 && r.state.g4 !== 'a') || false;
+                const hasG23 = !!r.state.g2 || !!r.state.g3;
+
+                if (!isTT && r.g4) {
+                    if (extra) {
+                        // Grp4 extra on Set 1/2 -> hide Grp2 & Grp3
+                        r.g2.style.display = 'none';
+                        r.g3.style.display = 'none';
+                    } else if (hasG23) {
+                        // Grp2/3 chosen -> hide Grp4
+                        r.g4.style.display = 'none';
+                    }
+                } else if (isTT) {
+                    // TT row: only one of Grp2/Grp3 is visible at a time (and TT badge is always visible)
+                    if (r.state.g3) r.g2.style.display = 'none';
+                    if (r.state.g2) r.g3.style.display = 'none';
+                }
+
+                // FD: grey out options already used in SD (still selectable but visibly invalid)
+                if (r.def.program === 'FD') {
+                    setDisabledOptions(r.g2, sdG2);
+                    setDisabledOptions(r.g3, sdG3);
+                    if (r.g4) setDisabledOptions(r.g4, sdG4);
+                    if (r.state.g2 && sdG2.has(r.state.g2)) r.g2.classList.add('cell-warning');
+                    if (r.state.g3 && sdG3.has(r.state.g3)) r.g3.classList.add('cell-warning');
+                    if (r.g4 && r.state.g4 && r.state.g4 !== 'a' && sdG4.has(r.state.g4)) r.g4.classList.add('cell-warning');
+                }
+            });
+
+            // --- Cap level at Tr1 when >=2 feature groups but no direction change ---
+            const dirCaps = {};
+            [sdRows, fdRows].forEach(group => {
+                const prog = group[0].def.program;
+                const f = countingFeatures(skater, prog);
+                const groupCount = [f.g1, f.g2, f.g3, f.g4].filter(a => a.length).length;
+                const capped = groupCount >= 2 && !hasDirChange(group);
+                dirCaps[prog] = capped;
+                if (capped) group.forEach(r => r.footDir.classList.add('cell-warning'));
+            });
+            refs.dirCaps = dirCaps;
+
+            // --- Rotation caps + green/red marking ---
+            // Rules: Tr1-Tr3 need >=3 rotations in EACH set, Tr4 needs >=4 in each set.
+            // Only performed sets (Foot+Dir selected) count. Green = >=4 rot, red = <4 rot.
+            const rotCaps = {};
+            [sdRows, fdRows].forEach(group => {
+                const prog = group[0].def.program;
+                const performed = group.filter(r => footDirValue(r.state));
+                const minRot = performed.length ? Math.min(...performed.map(r => rotOf(r.state))) : 4;
+                rotCaps[prog] = minRot >= 4 ? 4 : minRot >= 3 ? 3 : 0;
+                performed.forEach(r => r.rotSel.classList.add(rotOf(r.state) >= 4 ? 'ok' : 'cell-warning'));
+            });
+            refs.rotCaps = rotCaps;
+
+            // --- Special warning: DF and DE both used in SD -> FD level 4 impossible ---
+            // (Grp 1 has only DF and DE; consuming both in SD leaves nothing for FD.)
+            refs.grp1Burned = sdDFUsed && !!sdDE;
+
+            updateLevelLine(skater, refs);
+            markCountingFeatures(skater, refs);
+
+            // Auto-fit dropdown widths after DOM changes
+            refs.rowRefs.forEach(r => {
+                [r.footDir, r.rotSel, r.de, r.g2, r.g3, r.g4].forEach(sel => { if (sel) fitSelect(sel); });
+            });
+        }
+
+        // Which features count (per program), with the ONE Grp4 winner selected by bonus rank
+        function countingFeatures(skater, program) {
+            const refs = skaterRefs.get(skater.id);
+            const rows = refs.rowRefs.filter(r => r.def.program === program);
+            const sdRows = refs.rowRefs.filter(r => r.def.program === 'SD');
+            const isFD = program === 'FD';
+
+            const sdDE = sdRows.find(r => r.def.set === '1').state.de;
+            const sdG2 = new Set(sdRows.map(r => r.state.g2).filter(v => v));
+            const sdG3 = new Set(sdRows.map(r => r.state.g3).filter(v => v));
+            const sdG4 = new Set(sdRows.map(r => r.state.g4).filter(v => v && v !== 'a'));
+            const sdDFUsed = footChangeFlags(sdRows).some(Boolean);
+
+            const g1 = [], g2 = [], g3 = [];
+            let g4Best = null; // {key, short}
+
+            // DF (not counted in FD if already used in SD)
+            const dfFlags = footChangeFlags(rows);
+            if (!(isFD && sdDFUsed) && dfFlags.some(Boolean)) g1.push('DF');
+
+            // DE
+            const set1 = rows.find(r => r.def.set === '1');
+            if (set1 && set1.state.de && !(isFD && sdDE && set1.state.de === sdDE)) g1.push('DE');
+
+            rows.forEach(r => {
+                const isTT = r.def.set === 'TT';
+                const extra = r.state.g4 && r.state.g4 !== 'a';
+
+                if (r.state.g2 && !(isFD && sdG2.has(r.state.g2))) {
+                    if (!g2.includes(r.state.g2)) g2.push(r.state.g2);
+                }
+                if (r.state.g3 && !(isFD && sdG3.has(r.state.g3))) {
+                    if (!g3.includes(r.state.g3)) g3.push(r.state.g3);
+                }
+
+                // Grp4 extra on this row (not 'a'=TT auto)
+                if (extra && !(isFD && sdG4.has(r.state.g4))) {
+                    const cand = {key: r.state.g4, short: CONFIG.g4Short[r.state.g4]};
+                    if (!g4Best || CONFIG.g4Bonus[cand.key] > CONFIG.g4Bonus[g4Best.key]) g4Best = cand;
+                }
+                // Grp4a: third set skated -- counts only with >=4 rotations
+                // (rules: at least the rotations required for the maximum level of the category; we assume max level 4)
+                if (isTT && footDirValue(r.state) && rotOf(r.state) >= 4) {
+                    const cand = {key: 'a', short: 'TT'};
+                    if (!g4Best || CONFIG.g4Bonus[cand.key] > CONFIG.g4Bonus[g4Best.key]) g4Best = cand;
+                }
+            });
+
+            return {g1, g2, g3, g4: g4Best ? [g4Best.short] : [], g4Key: g4Best ? g4Best.key : null};
+        }
+
+        // Highlight selects/badges whose feature counts for the level (green 'ok')
+        function markCountingFeatures(skater, refs) {
+            ['SD', 'FD'].forEach(prog => {
+                const rows = refs.rowRefs.filter(r => r.def.program === prog);
+                const f = countingFeatures(skater, prog);
+                const countingG4Key = f.g4Key;
+                rows.forEach(r => {
+                    const isTT = r.def.set === 'TT';
+                    // G2/G3 dropdowns turn green if their value is in the counting sets
+                    if (r.state.g2 && f.g2.includes(r.state.g2)) r.g2.classList.add('ok');
+                    if (r.state.g3 && f.g3.includes(r.state.g3)) r.g3.classList.add('ok');
+                    // Grp4 dropdown turns green only if its value is the winner extra
+                    if (r.g4 && r.state.g4 && r.state.g4 !== 'a' && countingG4Key === r.state.g4) r.g4.classList.add('ok');
+                    // TT badge green if TT is the counting group 4
+                    if (isTT && countingG4Key === 'a') r.ttBadge.classList.add('on');
+                });
+            });
+        }
+
+        // Level string (SD Tr4%: ..), with bonus warning text
+        function levelString(skater, program) {
+            const refs = skaterRefs.get(skater.id);
+            const f = countingFeatures(skater, program);
+            const parts = [];
+            if (f.g1.length) parts.push('1(' + f.g1.join(',') + ')');
+            if (f.g2.length) parts.push('2(' + f.g2.join('') + ')');
+            if (f.g3.length) parts.push('3(' + f.g3.join('') + ')');
+                if (f.g4.length) parts.push('4(' + (CONFIG.g4BonusLabel[f.g4Key] || f.g4.join(',')) + ')');
+            let level = parts.length;
+            const rotCap = refs && refs.rotCaps ? refs.rotCaps[program] : 4;
+            const rotCapped = level > rotCap;
+            if (rotCapped) level = rotCap;
+            const capped = refs && refs.dirCaps && refs.dirCaps[program];
+            if (capped) level = Math.min(level, 1);
+            const hasBonus = f.g4.length > 0;
+            const call = level === 0 ? 'TrB' : 'Tr' + level + (hasBonus ? '%' : '');
+            const textDetail = parts.length ? ': ' + parts.join('+') : '';
+
+            // Build list of warnings (plain text + flag for HTML rendering)
+            const warns = [];
+            if (rotCapped) warns.push('⚠ rot');
+            if (capped) warns.push('⚠ no dir');
+            // Missing feature groups for level 4
+            if (level < 4) {
+                const missing = [];
+                if (!f.g1.length) missing.push('G1');
+                if (!f.g2.length) missing.push('G2');
+                if (!f.g3.length) missing.push('G3');
+                if (!f.g4.length) missing.push('G4');
+                if (missing.length) {
+                    warns.push('⚠ no ' + missing.join(','));
+                }
+            }
+            // DF+DE both used in SD -> FD L4 impossible; warn on both sides
+            if (refs && refs.grp1Burned) {
+                warns.push(program === 'SD' ? '⚠ DF+DE => no FD G1' : '⚠ no L4 (DF+DE used in SD)');
+            }
+
+            const text = program + ' ' + call + textDetail + (warns.length ? ' ' + warns.join(' ') : '');
+            return {
+                program: program,
+                call: call,
+                detail: textDetail,
+                warns: warns,
+                capped: capped,
+                text: text
+            };
+        }
+
+        function updateLevelLine(skater, refs) {
+            const sd = levelString(skater, 'SD');
+            const fd = levelString(skater, 'FD');
+            const fmt = l => {
+                const warnHtml = l.warns.length
+                    ? l.warns.map(w => ' <span class="warn-mark">' + escapeHtml(w) + '</span>').join('')
+                    : '';
+                return '<b>' + escapeHtml(l.program) + ' ' + escapeHtml(l.call) + '</b>' + escapeHtml(l.detail) + warnHtml;
+            };
+            refs.levelLine.innerHTML = fmt(sd) + '<span class="sep">|</span>' + fmt(fd);
+        }
+
+        function updateAll() { skaters.forEach(updateSkater); }
+
+        function addSkater(state) {
+            const skater = state || newSkaterState();
+            skaters.push(skater);
+            createSkaterSection(skater);
+            updateSkater(skater);
+            save();
+            return skater;
+        }
+
+        // Readable text for ONE skater (summary + per-set lines)
+        function skaterText(skater) {
+            const refs = skaterRefs.get(skater.id);
+            const name = (skater.name + ' ' + skater.surname).trim() || '(unnamed)';
+            const sd = levelString(skater, 'SD').text;
+            const fd = levelString(skater, 'FD').text;
+            let text = name + '\n' + sd + ' | ' + fd + '\n';
+            refs.rowRefs.forEach(r => {
+                const s = r.state;
+                const parts = [];
+                parts.push(r.def.program + ' Tr ' + r.def.set + ': ' + (footDirValue(s) ? CONFIG.fdSymbol[footDirValue(s)] : (s.foot || '–')));
+                parts.push(rotOf(s) + ' rot');
+
+                if (r.dfCounts) parts.push('DF ✓');
+                else if (r.dfPerformed) parts.push('DF(used)');
+
+                if (s.de) {
+                    const long = CONFIG.deLong[s.de] || s.de;
+                    parts.push(r.deCounts ? 'DE: ' + long : 'DE(used): ' + long);
+                }
+                if (s.g2 && s.g2 !== '') {
+                    const opt = CONFIG.g2Options.find(o => o.value === s.g2);
+                    parts.push('Arm ' + (opt ? opt.text : s.g2));
+                }
+                if (s.g3 && s.g3 !== '') {
+                    const opt = CONFIG.g3Options.find(o => o.value === s.g3);
+                    parts.push('Leg ' + (opt ? opt.text : s.g3));
+                }
+                if (s.g4 && s.g4 !== '') {
+                    const short = CONFIG.g4Short[s.g4] || s.g4;
+                    parts.push('Extra ' + (s.g4 === 'a' ? 'TT' : short));
+                }
+                text += parts.join(' | ') + '\n';
+            });
+            return text;
+        }
+
+        function copySkaterText(skater) {
+            const name = (skater.name + ' ' + skater.surname).trim() || '(unnamed)';
+            navigator.clipboard.writeText(skaterText(skater)).then(() => showTip('Copied ' + name + ' to clipboard!'));
+        }
+
+        function copyAsText() {
+            const text = skaters.map(skaterText).join('\n');
+            navigator.clipboard.writeText(text).then(() => showTip('Copied to clipboard!'));
+        }
+
+        function clearAll() {
+            if (confirm('Clear ALL skaters and entries?')) {
+                localStorage.removeItem(STORAGE_KEY);
+                fileHandle = null;
+                skaters = [];
+                skaterRefs.clear();
+                document.getElementById('skaters').innerHTML = '';
+                nextId = 1;
+                addSkater();
+            }
+        }
+
+        function renderAll() {
+            skaterRefs.clear();
+            document.getElementById('skaters').innerHTML = '';
+            skaters.forEach(skater => createSkaterSection(skater));
+            skaters.forEach(updateSkater);
+        }
+
+        function init() {
+            ghUpdateBtn();
+            // Render immediately from localStorage so the UI is usable without any async wait.
+            if (!load()) {
+                skaters = [];
+                nextId = 1;
+                addSkater();
+            } else {
+                renderAll();
+            }
+            // Then try GitHub cloud (public repo -> no token needed); on success, replace the rendered list.
+            ghCloudLoad().then(cloud => {
+                if (!cloud) { save(); return; }
+                skaters = cloud.skaters.map(s => ({collapsed: false, ...s}));
+                nextId = cloud.nextId;
+                renderAll();
+                save();
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
