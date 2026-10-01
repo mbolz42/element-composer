@@ -532,6 +532,7 @@
                 const files = (Array.isArray(listing) ? listing : []).filter(f => String(f.name).endsWith('.json'));
                 if (!files.length) return null;
                 const acc = {skaters: [], nextId: 1};
+                const seenIds = new Set(), seenSlugs = new Set();
                 for (const f of files) {
                     const cRes = await ghFetch(`/repos/${GH.owner}/${GH.repo}/contents/${GH.dir}/${f.name}`);
                     if (!cRes.ok) continue;
@@ -539,7 +540,14 @@
                     try {
                         const data = JSON.parse(decodeURIComponent(escape(atob(c.content.replace(/\n/g, '')))));
                         if (Array.isArray(data.skaters)) {
-                            data.skaters.forEach(s => acc.skaters.push(s));
+                            data.skaters.forEach(s => {
+                                // Dedupe: same id or same name slug -> keep first occurrence
+                                const slug = ghSlug(s);
+                                if (seenIds.has(s.id) || seenSlugs.has(slug)) return;
+                                seenIds.add(s.id);
+                                seenSlugs.add(slug);
+                                acc.skaters.push(s);
+                            });
                             acc.nextId = Math.max(acc.nextId, data.nextId || 1, ...data.skaters.map(s => s.id + 1));
                         }
                     } catch (e) { /* skip malformed file */ }
@@ -562,7 +570,6 @@
                 if (!(await ghDeviceLogin())) return;
             }
             const base = `/repos/${GH.owner}/${GH.repo}/contents/${GH.dir}/`;
-            const payload = JSON.stringify({skaters, nextId}, null, 2);
             const bySlug = {};
             let committed = 0, failed = 0;
             for (const skater of skaters) {
@@ -577,6 +584,8 @@
                 const name = (skater.name || '(unnamed)').trim();
                 const sd = levelString(skater, 'SD').call, fd = levelString(skater, 'FD').call;
                 const msg = `${name}: ${sd} / ${fd}`;
+                // One file per skater: payload contains ONLY this skater
+                const payload = JSON.stringify({skaters: [skater], nextId}, null, 2);
                 const body = {message: msg, content: b64(payload), branch: GH.branch};
                 if (sha) body.sha = sha;
                 try {
