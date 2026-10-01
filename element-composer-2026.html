@@ -132,7 +132,7 @@
             border-radius: 4px;
             font-size: 13px;
             font-weight: 600;
-            width: 110px;
+            width: 160px;
         }
 
         .level-line {
@@ -598,16 +598,25 @@
                 : `Cloud ✓ committed ${committed} skater${committed === 1 ? '' : 's'}.`, failed > 0);
         }
 
-        let skaters = [];   // {id, name, surname, collapsed, rows: [{foot,dir,de,g2,g3,g4} x6]}
+        let skaters = [];   // {id, name, collapsed, rows: [{foot,dir,de,g2,g3,g4} x6]}
         let nextId = 1;
         let fileHandle = null; // File System Access API handle (when available)
         const skaterRefs = new Map(); // id -> {section, levelLine, rowRefs:[{...inputs}]}
+
+        // Normalize loaded skaters (localStorage / cloud): merge old Name+Surname into one full-name field
+        function normalizeSkater(s) {
+            const out = {collapsed: false, ...s};
+            const name = (out.name || '').trim();
+            const surname = (out.surname || '').trim();
+            out.name = surname ? (name ? name + ' ' + surname : surname) : name;
+            delete out.surname;
+            return out;
+        }
 
         function newSkaterState() {
             return {
                 id: nextId++,
                 name: '',
-                surname: '',
                 collapsed: false,
                 rows: ROWS.map(r => ({foot: '', dir: '', rot: 4, de: '', g2: '', g3: '', g4: ''}))
             };
@@ -698,7 +707,7 @@
         }
 
         function applyLoadedData(data) {
-            skaters = data.skaters.map(s => ({collapsed: false, ...s}));
+            skaters = data.skaters.map(normalizeSkater);
             nextId = data.nextId || (Math.max(0, ...skaters.map(s => s.id)) + 1);
             skaterRefs.clear();
             document.getElementById('skaters').innerHTML = '';
@@ -723,7 +732,7 @@
                 if (!raw) return false;
                 const data = JSON.parse(raw);
                 if (!data.skaters || !data.skaters.length) return false;
-                skaters = data.skaters.map(s => ({collapsed: false, ...s}));
+                skaters = data.skaters.map(normalizeSkater);
                 nextId = data.nextId || (Math.max(...skaters.map(s => s.id)) + 1);
                 return true;
             } catch (e) { return false; }
@@ -801,14 +810,13 @@
             section.className = 'skater';
             section.dataset.id = skater.id;
 
-            // Header: drag handle, collapse toggle, name, surname, level line, remove
+            // Header: drag handle, collapse toggle, full name, level line, copy, remove
             const header = document.createElement('div');
             header.className = 'skater-header';
             header.innerHTML = `
                 <span class="drag-handle" draggable="true" title="Drag to change order">☰</span>
                 <button class="collapse-btn" title="Toggle open/closed">${skater.collapsed ? '\u25B8' : '\u25BE'}</button>
                 <input type="text" placeholder="Name" value="${escapeHtml(skater.name)}" data-field="name">
-                <input type="text" placeholder="Surname" value="${escapeHtml(skater.surname)}" data-field="surname">
                 <div class="level-line"></div>
                 <button class="btn-copy-one" title="Copy this skater's entry as text">&#128203;</button>
                 <button class="btn-remove" title="Remove skater">&#10005;</button>
@@ -821,11 +829,10 @@
             section.addEventListener('dragend', () => { dragSrcId = null; });
 
             header.querySelector('[data-field="name"]').addEventListener('input', e => { skater.name = e.target.value; save(); });
-            header.querySelector('[data-field="surname"]').addEventListener('input', e => { skater.surname = e.target.value; save(); });
             header.querySelector('.collapse-btn').addEventListener('click', () => toggleCollapse(skater));
             header.querySelector('.btn-copy-one').addEventListener('click', () => copySkaterText(skater));
             header.querySelector('.btn-remove').addEventListener('click', () => {
-                const label = (skater.name + ' ' + skater.surname).trim() || 'this skater';
+                const label = (skater.name || '').trim() || 'this skater';
                 if (confirm('Remove ' + label + '?')) {
                     skaters = skaters.filter(s => s.id !== skater.id);
                     skaterRefs.delete(skater.id);
@@ -1276,7 +1283,7 @@
         // Readable text for ONE skater (summary + per-set lines)
         function skaterText(skater) {
             const refs = skaterRefs.get(skater.id);
-            const name = (skater.name + ' ' + skater.surname).trim() || '(unnamed)';
+            const name = (skater.name || '').trim() || '(unnamed)';
             const sd = levelString(skater, 'SD').text;
             const fd = levelString(skater, 'FD').text;
             let text = name + '\n' + sd + ' | ' + fd + '\n';
@@ -1311,7 +1318,7 @@
         }
 
         function copySkaterText(skater) {
-            const name = (skater.name + ' ' + skater.surname).trim() || '(unnamed)';
+            const name = (skater.name || '').trim() || '(unnamed)';
             navigator.clipboard.writeText(skaterText(skater)).then(() => showTip('Copied ' + name + ' to clipboard!'));
         }
 
@@ -1352,7 +1359,7 @@
             // Then try GitHub cloud (public repo -> no token needed); on success, replace the rendered list.
             ghCloudLoad().then(cloud => {
                 if (!cloud) { save(); return; }
-                skaters = cloud.skaters.map(s => ({collapsed: false, ...s}));
+                skaters = cloud.skaters.map(normalizeSkater);
                 nextId = cloud.nextId;
                 renderAll();
                 save();
